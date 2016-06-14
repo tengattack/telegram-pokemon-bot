@@ -14,7 +14,7 @@ Telegram plays pokemon! (yet another TPP :)
 * [VisualBoyAdvance-SDL](https://sourceforge.net/projects/vba/)
 * Node.js x64
 * [Visual C++ Redistributable for Visual Studio 2015](https://www.microsoft.com/en-us/download/details.aspx?id=48145)
-* vba.node extension for Node.js (under /extensions, or you can compile it by yourself)
+* vba.node extension for Node.js (under /extensions lib: [Node v6.2.1](https://nodejs.org/dist/v6.2.1/node-v6.2.1-x64.msi), or you can compile it by yourself)
 * Copy `config.example.js` to `config.js`, and modify it with your own options.
 * `npm install`
 
