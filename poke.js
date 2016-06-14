@@ -132,29 +132,40 @@ ba.commands.on('flee', (upd, followString) => {
 });
 
 ba.commands.on('test', (upd, followString) => {
-  var times = 1;
-  if (followString && validator.isNumeric(followString)) {
-    times = parseInt(followString);
-    if (times > 10 || times < 1) {
-      times = 1;
+  let chat = upd.message.chat;
+  var msg = 'aaa';
+  ba.sendMessage({
+    chat_id: chat.id,
+    text: msg,
+    reply_markup: JSON.stringify({
+      inline_keyboard: [ [ { text: 'Agree', callback_data: '/agree ' + chat.id },
+        { text: 'Ignore', callback_data: '/ignore ' + chat.id }] ]
+    }),
+  }, (err, result) => {
+    if (err) {
+      console.log(err);
     }
-  }
-  console.log(times, followString);
+  });
 });
 ba.commands.on('ignore', (upd, followString) => {
   let cq = upd.callback_query;
-  ba.answerCallbackQuery({
-    callback_query_id: cq.id,
-    text: 'ignored'
-  });
+  if (cq.message) {
+    ba.editMessageReplyMarkup({
+      chat_id: cq.message.chat.id,
+      message_id: cq.message.message_id,
+    });
+  }
 });
 ba.commands.on('agree', (upd, followString) => {
   let cq = upd.callback_query;
-  /*if (chat.id === config.admin_id)*/ {
+  if (cq.message) {
     var allow_id = parseInt(followString);
-    ba.answerCallbackQuery({
+    /*ba.answerCallbackQuery({
       callback_query_id: cq.id,
-      text: 'allowed'
+      text: 'allowed'*/
+    ba.editMessageReplyMarkup({
+      chat_id: cq.message.chat.id,
+      message_id: cq.message.message_id,
     }, (err, result) => {
       if (err) {
         console.log(err);
@@ -170,9 +181,16 @@ ba.commands.on('agree', (upd, followString) => {
             console.log(err);
           }
         });
+        var msg = 'approved ' + allow_id;
+        if (cq.from) {
+          if (cq.from.first_name) {
+            msg = cq.from.first_name + (cq.from.last_name ? ' ' + cq.from.last_name : '')
+                + ' ' + msg;
+          }
+        }
         ba.sendMessage({
           chat_id: config.admin_id,
-          text: 'allowed ' + allow_id
+          text: msg
         });
       }
     });
