@@ -100,7 +100,8 @@ ba.setCheck((cmd, upd) => {
       ba.sendMessage({
         chat_id: chat.id,
         reply_markup: JSON.stringify({
-          keyboard: [ [ '/current', '/join', '/keyboard off' ] ]
+          keyboard: [ [ '/current', '/join', '/keyboard off' ] ],
+          selective: true
         }),
         reply_to_message_id: upd.message.message_id,
         text: 'Please join group: https://telegram.me/pokemon_game or ask for /join',
@@ -185,7 +186,8 @@ ba.commands.on('join', (upd, followString) => {
       text: 'keyboard on',
       reply_to_message_id: upd.message.message_id,
       reply_markup: JSON.stringify({
-        keyboard: f_keyboard
+        keyboard: f_keyboard,
+        selective: true
       }),
     }, (err, result) => {
       if (err) {
@@ -347,7 +349,8 @@ ba.commands.on('keyboard', (upd, followString) => {
       text: 'keyboard on',
       reply_to_message_id: upd.message.message_id,
       reply_markup: JSON.stringify({
-        keyboard: f_keyboard
+        keyboard: f_keyboard,
+        selective: true
       }),
     }, (err, result) => {
       if (err) {
