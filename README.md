@@ -24,3 +24,4 @@ Telegram plays pokemon! (yet another TPP :)
 * Use `node-gyp` for auto installation.
 * Cross Platform.
 * Telegram Webhooks.
+* Try [GBA.js](https://github.com/endrift/gbajs) as emulator.
