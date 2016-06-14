@@ -17,6 +17,7 @@ Telegram plays pokemon! (yet another TPP :)
 * vba.node extension for Node.js (under /extensions lib: [Node v6.2.1](https://nodejs.org/dist/v6.2.1/node-v6.2.1-x64.msi), or you can compile it by yourself)
 * Copy `config.example.js` to `config.js`, and modify it with your own options.
 * `npm install`
+* `npm start`
 
 ## TODO
 

@@ -2,7 +2,7 @@
   "name": "telegram-pokemon-bot",
   "version": "0.1.0",
   "description": "Telegram plays pokemon!",
-  "main": "pokemon.js",
+  "main": "poke.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -13,7 +13,8 @@
   "keywords": [
     "telegram",
     "bot",
-    "flyingchess"
+    "pokemon",
+    "vba"
   ],
   "dependencies": {
     "underscore": "*",
