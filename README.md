@@ -23,3 +23,4 @@ Telegram plays pokemon! (yet another TPP :)
 
 * Use `node-gyp` for auto installation.
 * Cross Platform.
+* Telegram Webhooks.
