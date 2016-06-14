@@ -18,6 +18,7 @@ Telegram plays pokemon! (yet another TPP :)
 * Copy `config.example.js` to `config.js`, and modify it with your own options.
 * `npm install`
 * `npm start`
+* NOTE: Windows Server need keep an active desktop, please check [here](https://support.smartbear.com/viewarticle/72794/).
 
 ## TODO
 
