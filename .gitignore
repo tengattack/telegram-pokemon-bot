@@ -37,6 +37,7 @@ jspm_packages
 .node_repl_history
 
 config.js
+whitelist.json
 
 # Visual Studio
 .vs
