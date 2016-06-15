@@ -54,6 +54,8 @@ private:
 	static void EIO_ScreenShot(uv_work_t *req);
 	static void EIO_AfterScreenShot(uv_work_t *req, int status);
 
+	static void Buffer_FreeCallback(char* data, void* hint);
+
 protected:
 	HWND m_hWnd;
 

@@ -1,6 +1,6 @@
 'use strict'
 
-const VBAEmulator = require('vba').VBAEmulator;
+const VBAEmulator = require('./extensions/vba').VBAEmulator;
 const fs = require('fs');
 const request = require('request');
 const _ = require('underscore');
@@ -66,8 +66,7 @@ function isWhitelistId(allow_id) {
 readWhitelistIds();
 
 function sendScreenShot() {
-  vba.screenshot(function (err, arrbuf) {
-    var buf = new Buffer(arrbuf);
+  vba.screenshot(function (err, buf) {
     if (err) {
       return;
     }

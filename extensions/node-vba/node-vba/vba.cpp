@@ -261,10 +261,11 @@ void VBAEmulator::EIO_AfterScreenShot(uv_work_t *req, int status)
 	argv[0] = Number::New(isolate, baton->error);
 	//argv[1] = String::NewFromUtf8(isolate, baton->textresult, String::kInternalizedString, strlen(baton->textresult));
 	if (baton->error == 0) {
-		Local<ArrayBuffer> ab = ArrayBuffer::New(isolate, baton->buf_ptr, baton->buf_len, v8::ArrayBufferCreationMode::kInternalized);
+		//argv[1] = ArrayBuffer::New(isolate, baton->buf_ptr, baton->buf_len, v8::ArrayBufferCreationMode::kInternalized);
 		//Uint8Array::New(ab, 0, baton->buf_len);
-		argv[1] = ab;
-		//free(baton->buf_ptr);
+		MaybeLocal<Object> buf = node::Buffer::New(isolate, (char *)baton->buf_ptr, baton->buf_len,
+				Buffer_FreeCallback, NULL);
+		buf.ToLocal(&argv[1]);
 	}
 	
 	TryCatch try_catch;
@@ -280,5 +281,12 @@ void VBAEmulator::EIO_AfterScreenShot(uv_work_t *req, int status)
 	if (try_catch.HasCaught())
 	{
 		node::FatalException(isolate, try_catch);
+	}
+}
+
+void VBAEmulator::Buffer_FreeCallback(char* data, void* hint)
+{
+	if (hint == NULL) {
+		free(data);
 	}
 }
