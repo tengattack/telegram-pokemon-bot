@@ -2,6 +2,7 @@
 logs
 *.log
 npm-debug.log*
+package-lock.json
 
 # Runtime data
 pids
@@ -44,3 +45,6 @@ whitelist.json
 build
 x64
 *.sdf
+
+config.js
+whitelist.json

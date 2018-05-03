@@ -1,15 +1,24 @@
 'use strict'
 
-const VBAEmulator = require('./extensions/vba').VBAEmulator;
 const fs = require('fs');
 const request = require('request');
 const _ = require('underscore');
 const validator = require('validator');
+const concat = require('concat-stream');
+const CRC32 = require('crc-32')
+const GameBoyAdvance = require('gbajs');
 
 const config = require('./config');
 const BotApi = require('./lib/botapi');
 
-var vba = new VBAEmulator();
+if (!config.gba) {
+  console.error('Please specify gba rom & savedata file in config.')
+  process.exit(1);
+}
+
+var gba = new GameBoyAdvance();
+var keypad;
+var biosBuf = fs.readFileSync('./node_modules/gbajs/resources/bios.bin');
 
 var ba = new BotApi(config.token, {
   proxyUrl: config.proxy,
@@ -66,10 +75,8 @@ function isWhitelistId(allow_id) {
 readWhitelistIds();
 
 function sendScreenShot() {
-  vba.screenshot(function (err, buf) {
-    if (err) {
-      return;
-    }
+  var png = gba.screenshot();
+  png.pack().pipe(concat(function (buf) {
     ba.sendPhoto({
       chat_id: ss_chat_id,
       photo: {
@@ -83,11 +90,12 @@ function sendScreenShot() {
       if (err) {
         console.log(err);
       }
-      //console.log(err, result);
+      // console.log(err, result);
     });
-  });
+  }));
 }
 
+/* setup bot */
 ba.setCheck((cmd, upd) => {
   if (cmd !== 'current' && cmd !== 'join' && cmd !== 'keyboard') {
     if (!upd.message) {
@@ -252,90 +260,68 @@ ba.commands.on('last', (upd, followString) => {
     }
   });
 });
-// define command
+
+// define key command
+function keypress(key, followString) {
+  if (followString && validator.isNumeric(followString)) {
+    var time = parseInt(followString);
+    if (time > keypad.PRESS_TIME * 60) {
+      time = keypad.PRESS_TIME * 60;
+    } else if (time <= 0) {
+      time = 1;
+    }
+    keypad.press(key, time);
+  } else {
+    keypad.press(key)
+  }
+}
 ba.commands.on('a', (upd, followString) => {
-  vba.a();
+  keypress(keypad.A, followString);
   ss_chat_id = upd.message.chat.id;
   ss_flag++;
 });
 ba.commands.on('b', (upd, followString) => {
-  vba.b();
+  keypress(keypad.B, followString);
   ss_chat_id = upd.message.chat.id;
   ss_flag++;
 });
 ba.commands.on('l', (upd, followString) => {
-  vba.l();
+  keypress(keypad.L, followString);
   ss_chat_id = upd.message.chat.id;
   ss_flag++;
 });
 ba.commands.on('r', (upd, followString) => {
-  vba.r();
+  keypress(keypad.R, followString);
   ss_chat_id = upd.message.chat.id;
   ss_flag++;
 });
 ba.commands.on('up', (upd, followString) => {
-  var times = 1;
-  if (followString && validator.isNumeric(followString)) {
-    times = parseInt(followString);
-    if (times > 10 || times < 1) {
-      times = 1;
-    }
-  }
-  for (var i = 0; i < times; i++) {
-    vba.up();
-  }
+  keypress(keypad.UP, followString);
   ss_chat_id = upd.message.chat.id;
   ss_flag++;
 });
 ba.commands.on('down', (upd, followString) => {
-  var times = 1;
-  if (followString && validator.isNumeric(followString)) {
-    times = parseInt(followString);
-    if (times > 10 || times < 1) {
-      times = 1;
-    }
-  }
-  for (var i = 0; i < times; i++) {
-    vba.down();
-  }
+  keypress(keypad.DOWN, followString);
   ss_chat_id = upd.message.chat.id;
   ss_flag++;
 });
 ba.commands.on('left', (upd, followString) => {
-  var times = 1;
-  if (followString && validator.isNumeric(followString)) {
-    times = parseInt(followString);
-    if (times > 10 || times < 1) {
-      times = 1;
-    }
-  }
-  for (var i = 0; i < times; i++) {
-    vba.left();
-  }
+  keypress(keypad.LEFT, followString);
   ss_chat_id = upd.message.chat.id;
   ss_flag++;
 });
 ba.commands.on('right', (upd, followString) => {
-  var times = 1;
-  if (followString && validator.isNumeric(followString)) {
-    times = parseInt(followString);
-    if (times > 10 || times < 1) {
-      times = 1;
-    }
-  }
-  for (var i = 0; i < times; i++) {
-    vba.right();
-  }
+  keypress(keypad.RIGHT, followString);
   ss_chat_id = upd.message.chat.id;
   ss_flag++;
 });
 ba.commands.on('st', (upd, followString) => {
-  vba.start();
+  keypress(keypad.START, followString);
   ss_chat_id = upd.message.chat.id;
   ss_flag++;
 });
 ba.commands.on('sel', (upd, followString) => {
-  vba.select();
+  keypress(keypad.SELECT, followString);
   ss_chat_id = upd.message.chat.id;
   ss_flag++;
 });
@@ -398,4 +384,43 @@ ba.events.on('end', () => {
   ss_flag = 0;
 });
 
-ba.start();
+/* setup gba */
+gba.logLevel = gba.LOG_ERROR;
+gba.setBios(biosBuf);
+gba.setCanvasMemory();
+
+var getSavedataHash = function () {
+  var sram = gba.mmu.save;
+  if (sram) {
+    var buf = Buffer.from(sram.buffer);
+    return CRC32.buf(buf);
+  }
+};
+
+var startAutoSave = function () {
+  var hash = getSavedataHash();
+  setInterval(function () {
+    var currentHash = getSavedataHash();
+    if (hash !== currentHash) {
+      hash = currentHash;
+      gba.downloadSavedataToFile(config.gba.savedata_file);
+    }
+  }, 60000);
+};
+
+gba.loadRomFromFile(config.gba.rom_file, function (err, result) {
+  if (err) {
+    console.error('loadRom failed:', err);
+    process.exit(1);
+  }
+  gba.loadSavedataFromFile(config.gba.savedata_file, function (err) {
+    if (err) {
+      console.error('loadSavedata failed:', err);
+      process.exit(1);
+    }
+    startAutoSave();
+    gba.runStable();
+    keypad = gba.keypad;
+    ba.start();
+  });
+});
