@@ -19,7 +19,7 @@
   "dependencies": {
     "concat-stream": "^1.6.2",
     "crc-32": "^1.2.0",
-    "gbajs": "^1.1.0",
+    "gbajs": "^1.1.0-rc1",
     "request": "*",
     "underscore": "*",
     "validator": "*"
