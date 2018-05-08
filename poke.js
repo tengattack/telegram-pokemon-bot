@@ -149,7 +149,7 @@ ba.setCheck((cmd, upd) => {
           selective: true
         }),
         reply_to_message_id: upd.message.message_id,
-        text: 'Please join group: https://telegram.me/pokemon_game or ask for /join',
+        text: 'Please join group: ' + config.group_url + ' or ask for /join',
       }, (err, result) => {
         if (err) {
           console.log(err);
@@ -176,22 +176,6 @@ ba.commands.on('flee', (upd, followString) => {
   });
 });
 
-ba.commands.on('test', (upd, followString) => {
-  let chat = upd.message.chat;
-  var msg = 'aaa';
-  ba.sendMessage({
-    chat_id: chat.id,
-    text: msg,
-    reply_markup: JSON.stringify({
-      inline_keyboard: [ [ { text: 'Agree', callback_data: '/agree ' + chat.id },
-        { text: 'Ignore', callback_data: '/ignore ' + chat.id }] ]
-    }),
-  }, (err, result) => {
-    if (err) {
-      console.log(err);
-    }
-  });
-});
 ba.commands.on('ignore', (upd, followString) => {
   let cq = upd.callback_query;
   if (cq.message) {
@@ -256,6 +240,13 @@ ba.commands.on('join', (upd, followString) => {
       if (err) {
         console.log(err);
       }
+    });
+    return;
+  }
+  if (config.private) {
+    ba.sendMessage({
+      chat_id: chat.id,
+      text: 'Bot is running at private mode. Please join group: ' + config.group_url,
     });
     return;
   }
