@@ -397,7 +397,7 @@ ba.events.on('begin', () => {
   ss_flag = 0;
 });
 
-ba.events.on('end', () => {
+function endEvent() {
   if (ss_flag > 0) {
     if (ss_timeout) {
       clearTimeout(ss_timeout);
@@ -412,25 +412,86 @@ ba.events.on('end', () => {
     }
   }
   ss_flag = 0;
-});
+}
 
-/* setup gba */
-gba.logLevel = gba.LOG_ERROR;
-gba.setBios(biosBuf);
-gba.setCanvasMemory();
+ba.events.on('end', endEvent);
 
-gba.loadRomFromFile(config.gba.rom_file, function (err, result) {
-  if (err) {
-    console.error('loadRom failed:', err);
-    process.exit(1);
+var started = false;
+
+function start() {
+  if (!started) {
+    /* setup gba */
+    gba.logLevel = gba.LOG_ERROR;
+    gba.setBios(biosBuf);
+    gba.setCanvasMemory();
   }
-  gba.loadSavedataFromFile(config.gba.savedata_file, function (err) {
+  gba.loadRomFromFile(config.gba.rom_file, function (err, result) {
     if (err) {
-      console.error('loadSavedata failed:', err);
+      console.error('loadRom failed:', err);
       process.exit(1);
     }
-    activeGame();
-    keypad = gba.keypad;
-    ba.start();
+    gba.loadSavedataFromFile(config.gba.savedata_file, function (err) {
+      if (err) {
+        console.error('loadSavedata failed:', err);
+        process.exit(1);
+      }
+      activeGame();
+      keypad = gba.keypad;
+      if (!started) {
+        ba.start();
+        started = true;
+      }
+    });
   });
+}
+
+ba.commands.on('reset', (upd, followString) => {
+  let chat = upd.message.chat;
+  if (chat.type !== 'private') {
+    ba.getChatAdministrators({ chat_id: chat.id }, (err, adms) => {
+      if (err) {
+        console.log(err);
+        return;
+      }
+
+      let isAdmin = false;
+      for (var i = 0; i < adms.length; i++) {
+        if (upd.message.from.id === adms[i].user.id) {
+          isAdmin = true;
+          break;
+        }
+      }
+      if (!isAdmin) {
+        ba.sendMessage({
+          chat_id: chat.id,
+          reply_to_message_id: upd.message.message_id,
+          text: 'You have no permission to do that.'
+        });
+        return;
+      }
+
+      // reset the game
+      gba.pause();
+      gba.reset();
+      start();
+      ss_flag = 1;
+      endEvent();
+    });
+    return;
+  } else {
+    if (!isWhitelistId(chat.id)) {
+      ba.sendMessage({
+        chat_id: chat.id,
+        text: 'You have no permission to do that.'
+      });
+      return;
+    }
+  }
+  // reset the game
+  gba.pause();
+  gba.reset();
+  start();
+  ss_flag = 1;
 });
+
+start();
