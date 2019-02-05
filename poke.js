@@ -433,7 +433,7 @@ function start() {
     gba.loadSavedataFromFile(config.gba.savedata_file, function (err) {
       if (err) {
         console.error('loadSavedata failed:', err);
-        process.exit(1);
+        // process.exit(1);
       }
       activeGame();
       keypad = gba.keypad;
