@@ -1,6 +1,7 @@
 'use strict'
 
 const fs = require('fs');
+const path = require('path');
 const request = require('request');
 const _ = require('underscore');
 const validator = require('validator');
@@ -135,6 +136,9 @@ function sendScreenShot() {
 
 /* setup bot */
 ba.setCheck((cmd, upd) => {
+  if (cmd === 'uploadsave' || cmd === 'downloadsave') {
+    return false;
+  }
   if (cmd !== 'current' && cmd !== 'join' && cmd !== 'keyboard') {
     if (!upd.message) {
       return false;
@@ -491,6 +495,177 @@ ba.commands.on('reset', (upd, followString) => {
   gba.reset();
   start();
   ss_flag = 1;
+});
+
+function downloadsave(chat_id) {
+  fs.readFile(config.gba.savedata_file, function (err, buf) {
+    if (err) {
+      console.log(err);
+      return;
+    }
+    var filename = path.basename(config.gba.savedata_file);
+    ba.sendDocument({
+      chat_id: chat_id,
+      document: {
+        value: buf,
+        options: {
+          filename: filename,
+          contentType: 'application/octet-stream'
+        },
+      },
+    }, (err, result) => {
+      if (err) {
+        console.log(err);
+      }
+      // console.log(err, result);
+    });
+  });
+}
+
+ba.commands.on('downloadsave', (upd, followString) => {
+  ba.getChat({ chat_id: config.admin_id }, (err, chat) => {
+    if (err) {
+      console.log(err);
+      return;
+    }
+    if (chat.type !== 'private') {
+      ba.getChatAdministrators({ chat_id: chat.id }, (err, adms) => {
+        if (err) {
+          console.log(err);
+          return;
+        }
+
+        let isAdmin = false;
+        for (var i = 0; i < adms.length; i++) {
+          if (upd.message.from.id === adms[i].user.id) {
+            isAdmin = true;
+            break;
+          }
+        }
+        if (!isAdmin) {
+          ba.sendMessage({
+            chat_id: upd.message.chat.id,
+            reply_to_message_id: upd.message.message_id,
+            text: 'You have no permission to do that.'
+          });
+          return;
+        }
+
+        if (upd.message.chat.type !== 'private') {
+          ba.sendMessage({
+            chat_id: upd.message.chat.id,
+            reply_to_message_id: upd.message.message_id,
+            text: 'You shoud download save data in private.'
+          });
+          return;
+        }
+
+        // send to private chat
+        downloadsave(upd.message.from.id);
+      });
+      return;
+    } else {
+      if (upd.message.chat.id !== config.admin_id) {
+        ba.sendMessage({
+          chat_id: upd.message.chat.id,
+          text: 'You have no permission to do that.'
+        });
+        return;
+      }
+
+      downloadsave(chat.id);
+    }
+  });
+});
+
+function uploadsave(upd) {
+  if (upd.message.reply_to_message && upd.message.reply_to_message.document) {
+    let doc = upd.message.reply_to_message.document;
+    // check file size limit
+    if (doc.file_size > 2 * 1024 * 1024) {
+      ba.sendMessage({
+        chat_id: upd.message.chat.id,
+        text: 'File size too large.'
+      });
+      return;
+    }
+    ba.getFile({ file_id: doc.file_id }, (err, file) => {
+      if (err) {
+        console.log(err);
+        return;
+      }
+      ba.downloadFile(file.file_path, config.gba.savedata_file, function (err) {
+        if (err) {
+          console.log('download save data file error:', err)
+          return;
+        }
+        ba.sendMessage({
+          chat_id: upd.message.chat.id,
+          text: 'Done. You can reset the game by /reset'
+        });
+      });
+    });
+    return;
+  }
+  ba.sendMessage({
+    chat_id: upd.message.chat.id,
+    text: 'You should reply a save data file with /uploadsave'
+  });
+}
+
+ba.commands.on('uploadsave', (upd, followString) => {
+  ba.getChat({ chat_id: config.admin_id }, (err, chat) => {
+    if (err) {
+      console.log(err);
+      return;
+    }
+    if (chat.type !== 'private') {
+      ba.getChatAdministrators({ chat_id: chat.id }, (err, adms) => {
+        if (err) {
+          console.log(err);
+          return;
+        }
+
+        let isAdmin = false;
+        for (var i = 0; i < adms.length; i++) {
+          if (upd.message.from.id === adms[i].user.id) {
+            isAdmin = true;
+            break;
+          }
+        }
+        if (!isAdmin) {
+          ba.sendMessage({
+            chat_id: upd.message.chat.id,
+            reply_to_message_id: upd.message.message_id,
+            text: 'You have no permission to do that.'
+          });
+          return;
+        }
+
+        if (upd.message.chat.type !== 'private') {
+          ba.sendMessage({
+            chat_id: upd.message.chat.id,
+            reply_to_message_id: upd.message.message_id,
+            text: 'You shoud upload save data in private.'
+          });
+          return;
+        }
+
+        uploadsave(upd);
+      });
+      return;
+    } else {
+      if (upd.message.chat.id !== config.admin_id) {
+        ba.sendMessage({
+          chat_id: upd.message.chat.id,
+          text: 'You have no permission to do that.'
+        });
+        return;
+      }
+
+      uploadsave(upd);
+    }
+  });
 });
 
 start();
