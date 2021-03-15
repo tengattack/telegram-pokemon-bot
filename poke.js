@@ -447,6 +447,13 @@ function start() {
 
 ba.commands.on('reset', (upd, followString) => {
   let chat = upd.message.chat;
+  if (config.admin_id !== chat.id) {
+    ba.sendMessage({
+      chat_id: chat.id,
+      text: 'You have no permission to do that.'
+    });
+    return;
+  }
   if (chat.type !== 'private') {
     ba.getChatAdministrators({ chat_id: chat.id }, (err, adms) => {
       if (err) {
@@ -478,14 +485,6 @@ ba.commands.on('reset', (upd, followString) => {
       endEvent();
     });
     return;
-  } else {
-    if (!isWhitelistId(chat.id)) {
-      ba.sendMessage({
-        chat_id: chat.id,
-        text: 'You have no permission to do that.'
-      });
-      return;
-    }
   }
   // reset the game
   gba.pause();
